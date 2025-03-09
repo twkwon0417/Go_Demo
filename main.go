@@ -1,8 +1,9 @@
 package main
 
 import (
+	"errors"
 	"fmt"
-	"learnGo/dictionary"
+	"net/http"
 	"strings"
 )
 
@@ -39,7 +40,7 @@ func canIDrinkV2(age int) bool { // Switch & variable expression
 }
 
 func superAdd(numbers ...int) (addIndex, ans int) { // 가변 인자 처리
-	for number := range numbers { // 이경우 index를 더함
+	for number := range numbers {                   // 이경우 index를 더함
 		addIndex += number
 	}
 
@@ -55,6 +56,8 @@ type person struct {
 	age     int
 	favFood []string
 }
+
+// =================================================================================
 
 // main for Basic of Go
 //func main() {
@@ -78,6 +81,8 @@ type person struct {
 //fmt.Println(thomas)
 //}
 
+// =================================================================================
+
 // main for simple bank application
 //func main() {
 //	tonyAccount := bank.NewAccount("Tony")
@@ -91,16 +96,67 @@ type person struct {
 //	fmt.Println(tonyAccount)
 //}
 
+// =================================================================================
+
+// main for dictionary type
+//func main() {
+//	dictionary := dictionary.Dictionary{}
+//	baseWord := "hello"
+//	dictionary.Add(baseWord, "First")
+//	dictionary.Search(baseWord)
+//	dictionary.Delete(baseWord)
+//	word, err := dictionary.Search(baseWord)
+//	if err != nil {
+//		fmt.Println(err)
+//	} else {
+//		fmt.Println(word)
+//	}
+//}
+
+// =================================================================================
+
+// main for hitUrl
 func main() {
-	dictionary := dictionary.Dictionary{}
-	baseWord := "hello"
-	dictionary.Add(baseWord, "First")
-	dictionary.Search(baseWord)
-	dictionary.Delete(baseWord)
-	word, err := dictionary.Search(baseWord)
-	if err != nil {
-		fmt.Println(err)
-	} else {
-		fmt.Println(word)
+	results := make(map[string]int)
+	urls := []string{
+		"https://www.airbnb.com/",
+		"https://www.google.com/",
+		"https://www.amazon.com/",
+		"https://www.reddit.com/",
+		"https://www.google.com/",
+		"https://soundcloud.com/",
+		"https://www.facebook.com/",
+		"https://www.instagram.com/",
 	}
+	c := make(chan result)
+	for _, url := range urls {
+		go hitUrl(url, c)
+	}
+
+	for _ = range urls {
+		var ret result
+		ret = <-c
+
+		results[ret.url] = ret.status
+	}
+
+	for url, result := range results {
+		fmt.Println(url, result)
+	}
+}
+
+var (
+	errRequestFailed = errors.New("request failed")
+)
+
+type result struct {
+	url    string
+	status int
+}
+
+func hitUrl(url string, c chan<- result) {
+	fmt.Println("Checking: ", url)
+	resp, _ := http.Get(url)
+
+	c <- result{url, resp.StatusCode}
 }
